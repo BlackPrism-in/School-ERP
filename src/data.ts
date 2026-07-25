@@ -1,4 +1,28 @@
-import { LayoutDashboard, Users, GraduationCap, CalendarDays, ClipboardCheck, BookOpen, FileText, WalletCards, Megaphone, MessagesSquare, Bus, Library, BriefcaseBusiness, BarChart3, Settings, UserRoundPlus, ShieldCheck } from 'lucide-vue-next'
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  CalendarDays,
+  ClipboardCheck,
+  BookOpen,
+  FileText,
+  WalletCards,
+  Megaphone,
+  MessagesSquare,
+  Bus,
+  Library,
+  BriefcaseBusiness,
+  BarChart3,
+  Settings,
+  UserRoundPlus,
+  ShieldCheck,
+  Landmark,
+  CircleHelp,
+  BookCopy,
+  Hotel,
+  Radio,
+  Globe2,
+} from 'lucide-vue-next'
 
 export type Role = 'superadmin' | 'admin' | 'teacher' | 'student' | 'guardian'
 export const roles: { id: Role; label: string; name: string; initials: string }[] = [
@@ -24,12 +48,18 @@ export const menu = [
   { label: 'Assignments', icon: BookOpen, roles: ['superadmin','admin','teacher','student','guardian'] },
   { label: 'Exams & Results', icon: FileText, roles: ['superadmin','admin','teacher','student','guardian'] },
   { label: 'Fees & Finance', icon: WalletCards, roles: ['superadmin','admin','guardian'] },
+  { label: 'Accounting', icon: Landmark, roles: ['superadmin','admin'] },
   { label: 'Announcements', icon: Megaphone, roles: ['superadmin','admin','teacher','student','guardian'] },
   { label: 'Messages', icon: MessagesSquare, roles: ['superadmin','admin','teacher','student','guardian'] },
   { label: 'Transport', icon: Bus, roles: ['superadmin','admin','student','guardian'] },
   { label: 'Library', icon: Library, roles: ['superadmin','admin','teacher','student'] },
   { label: 'HR & Payroll', icon: BriefcaseBusiness, roles: ['superadmin','admin'] },
+  { label: 'Question Bank', icon: CircleHelp, roles: ['superadmin','admin','teacher'] },
+  { label: 'Learning & Quiz', icon: BookCopy, roles: ['superadmin','admin','teacher','student'] },
+  { label: 'SMS & Meetings', icon: Radio, roles: ['superadmin','admin','teacher'] },
+  { label: 'Hostel', icon: Hotel, roles: ['superadmin','admin'] },
   { label: 'Reports', icon: BarChart3, roles: ['superadmin','admin','teacher'] },
+  { label: 'Website CMS', icon: Globe2, roles: ['superadmin','admin'] },
   { label: 'Settings', icon: Settings, roles: ['superadmin','admin'] },
 ]
 

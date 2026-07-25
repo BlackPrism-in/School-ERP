@@ -1,15 +1,18 @@
 # EduNova School ERP
 
-A Vue 3 + TypeScript school management workspace inspired by the strongest common patterns in OneSchool, eSchool SaaS, and modern Adminex-style dashboards.
+EduNova keeps the existing site theme while replicating Mighty School’s role navigation and operational flows in Vue 3 + TypeScript.
 
-## Included in this foundation
+## Included
 
-- Four switchable role experiences: administrator, teacher, student, and guardian
-- Role-aware navigation and dashboard content
-- Responsive desktop/mobile application shell
-- Academic, attendance, timetable, assignment, exam, fee, communication, transport, library, HR, reporting, and settings module map
-- Dashboard KPIs, attendance analytics, daily schedule, tasks, and announcements
-- Shared design tokens and reusable panel/card patterns
+- The complete Mighty administration topology: 151 dashboard and workflow routes
+- Permission-scoped staff/teacher access with 45 enabled routes
+- Mighty’s separate 11-route parent portal and 9-route student portal
+- Student/staff records, migration, attendance, academics, payroll, fees, accounting, routines, library, exams, certificates, SMS, question bank, reports, settings, Zoom, CMS, hostel, transport, and AI
+- Dedicated transaction flows for attendance entry, student migration, smart fee collection, accounting vouchers, routine editing, book issue/return, mark entry, result processing, certificates, question creation, and configuration
+- Parent child-switching, fee information/payment, assignments, behavior, notices, events, exam results, and account security
+- Student routine, fees, library history, assignment submission, behavior, notices, events, profile, and password security
+- Search, filtering, create/view/edit/delete, CSV exports, downloads, local backups, and namespaced persistent browser storage
+- Responsive desktop and mobile application shell
 
 ## Run locally
 
@@ -20,6 +23,10 @@ npm run dev
 
 Create a production build with `npm run build`.
 
-## Product architecture
+## Data architecture
 
-The current release is the frontend product foundation. A production ERP should connect these screens to an API with tenant isolation, audited RBAC, PostgreSQL, object storage, background jobs, notification providers, payment gateways, and automated backups. Recommended implementation order: identity/RBAC, academic master data, people/admissions, attendance/timetable, assignments/exams, fees, communications, then operational modules and reports.
+The demo is usable without a server and stores changes under namespaced `edunova:*` keys in browser storage. The implementation is independent of the temporary `mighty school code` reference folder, so that folder can be removed after review.
+
+Run `node scripts/verify-mighty.mjs` while the app is open in a headless Edge debugging session to execute the full role-route and transaction-flow smoke matrix.
+
+For production deployment, replace the local persistence boundary with authenticated APIs backed by tenant isolation, audited RBAC, a transactional database, object storage, background jobs, notification providers, payment gateways, and managed backups.
