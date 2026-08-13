@@ -9,6 +9,7 @@ import { env } from './env.js'
 import { contextPlugin } from './plugins/context.js'
 import { authRoutes } from './auth/routes.js'
 import { studentRoutes } from './modules/students/routes.js'
+import { dashboardRoutes } from './modules/dashboard/routes.js'
 import { AppError } from './lib/errors.js'
 import { db } from './db/client.js'
 
@@ -105,6 +106,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   )
 
   await app.register(studentRoutes)
+  await app.register(dashboardRoutes)
 
   return app
 }

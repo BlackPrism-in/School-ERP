@@ -26,10 +26,13 @@ function generatePassword(): string {
 
 const name = arg('--name') ?? 'EduNova Demo School'
 const email = arg('--email')
+// A real person's name, not a job title: it is what the greeting and the audit
+// log show, and "Good morning, School Administrator" reads like a form letter.
+const adminName = arg('--admin-name') ?? 'School Administrator'
 const slug = arg('--slug') ?? env().TENANT_SLUG
 
 if (!email) {
-  console.error('Missing --email. Usage: npm run bootstrap -- --name "School" --email admin@school.edu')
+  console.error('Missing --email. Usage: npm run bootstrap -- --name "School" --email admin@school.edu --admin-name "Olivia Martin"')
   process.exit(1)
 }
 
@@ -52,7 +55,7 @@ try {
 
     const [user] = await tx<{ id: string }[]>`
       insert into app_user (tenant_id, email, password_hash, display_name, must_change_password)
-      values (${tenant!.id}, ${email}, ${await hashPassword(password)}, 'School Administrator', true)
+      values (${tenant!.id}, ${email}, ${await hashPassword(password)}, ${adminName}, true)
       returning id
     `
     await tx`

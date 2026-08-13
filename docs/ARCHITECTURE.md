@@ -228,8 +228,8 @@ version-specific behaviour.
    lockout, TOTP MFA. Email delivery still to wire.
 3. ✅ **RBAC middleware** — permission check plus the row-scope resolvers in §3.
 4. ⬜ **Tenant + school setup** — sessions, branches, classes, sections, subjects.
-5. 🟡 **Students** CRUD done; **staff** CRUD and CSV import with dry-run
-   preview still to build.
+5. 🟡 **Students** CRUD done (API + UI); **staff** CRUD and CSV import with
+   dry-run preview still to build.
 6. ⬜ Then the four MVP modules, in order: **Attendance → Notices →
    Exams/Marks → Fees.** Fees last: it is the one with the most rules, and by
    then the audit, permission and testing patterns are settled.
@@ -251,7 +251,7 @@ invariants) or maintaining a hand-written mirror that silently drifts.
 cd api && npm install && npm test
 ```
 
-59 tests across six files, each run against a database rebuilt from these
+65 tests across seven files, each run against a database rebuilt from these
 migrations — so a broken migration fails the suite at setup rather than in
 production.
 
@@ -263,3 +263,21 @@ production.
 | `students.test.ts` | Phase 1 exit criterion, audit before/after, conflicts, sensitive-field gating, withdrawal not deletion |
 | `tenant-isolation.test.ts` | RLS through the real app path, unfiltered-query safety, pooled-connection context leakage, `erp_app` has no BYPASSRLS |
 | `rate-limit.test.ts` | Per-IP login throttling |
+| `dashboard.test.ts` | Scoped summary figures, permission-gated fields, audit actor labels |
+
+---
+
+## 8. Frontend (Phase 2)
+
+The browser talks only to the API — no Supabase key ships to the client.
+
+- **Routing**: real URLs, lazy-loaded routes, guards that resolve the session
+  from the server. Pages are bookmarkable and survive a refresh.
+- **Data**: TanStack Query over a single fetch client with `credentials:
+  'include'`. Loading skeletons and error states everywhere, including a
+  distinct offline case. A 401 anywhere clears the session and redirects once.
+- **Permissions**: `/auth/me` returns the user's permission list; the client
+  uses it only to hide UI. Every check is re-run server-side.
+- **No fabricated data.** Modules without a backend render a roadmap panel
+  stating plainly that they are not connected, rather than sample records a
+  school could mistake for real ones.

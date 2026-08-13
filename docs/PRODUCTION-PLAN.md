@@ -4,7 +4,10 @@ _Assessment date: 13 Aug 2026 · Branch `main` @ `3267da3`_
 
 ---
 
-## 1. What exists today (honest assessment)
+## 1. Starting point (assessment as of 13 Aug 2026)
+
+> Historical. This is what the project looked like before Phases 0–2. Current
+> status is in the phase sections below and in the [README](../README.md).
 
 The build is green (`npm run build` succeeds, 228 KB JS / 92 KB CSS) and the UI is
 genuinely good-looking. But the codebase is **2,634 lines of Vue 3 frontend and
@@ -64,7 +67,7 @@ Lucia-style auth, Fastify API server as sole writer, `tenant_id` from day one,
 MVP = attendance + fees + exams/marks + notices over student and staff records,
 guardian portal deferred but modelled.
 
-Delivered: 11 SQL migrations in [`supabase/migrations/`](../supabase/migrations/)
+Delivered: SQL migrations in [`supabase/migrations/`](../supabase/migrations/)
 and a 13-group assertion suite in
 [`supabase/tests/schema_smoke.sql`](../supabase/tests/schema_smoke.sql),
 runnable with `./scripts/db-test.sh`.
@@ -109,10 +112,10 @@ This is the phase that turns a demo into an application. The security spine —
 1.1 through 1.5 — is built and tested; the remaining work is breadth (more
 CRUD modules), not depth.
 
-**Built so far:** [`api/`](../api/) — Fastify + TypeScript, 59 passing tests,
+**Built so far:** [`api/`](../api/) — Fastify + TypeScript, 65 passing tests,
 `npm test` in `api/`. See [api/README.md](../api/README.md).
 
-**1.1 Data model.** ✅ **Done** — 11 migrations, 54 tables, 13 database-enforced
+**1.1 Data model.** ✅ **Done** — 13 migrations, 54 tables, 13 database-enforced
 invariants, all green under `./scripts/db-test.sh`. See
 [ARCHITECTURE.md §4](ARCHITECTURE.md#4-data-model). `enrolment` is the join that
 makes sessions and promotions work, and it is now the anchor for attendance,
@@ -141,9 +144,9 @@ throttling, helmet and CORS. The request-context transaction helper in
 the API. Row-level scope is separate and additive: teachers see only their own
 sections, students only themselves, guardians only their children — with
 `assertStudentInScope` on every single-record access, so a legitimate
-permission cannot be aimed at someone else's child by editing the URL. The
-client copy in [permissions.ts](../src/permissions.ts) is now for hiding UI
-only.
+permission cannot be aimed at someone else's child by editing the URL. The old
+client-side `permissions.ts` was deleted in Phase 2; the browser now receives
+its permission list from `/auth/me` and uses it only to hide UI.
 
 **1.5 Audit logging.** ✅ **Done** — row changes via the triggers from
 [0009](../supabase/migrations/0009_audit_and_compliance.sql), attributed to the
@@ -164,29 +167,43 @@ persists in Postgres, and the audit log records the insert attributed to them.
 
 ---
 
-### Phase 2 — Wire the UI to the backend (3–4 weeks)
+### Phase 2 — Wire the UI to the backend 🟡 **Core complete**
 
-**2.1 Introduce `vue-router`.** It is already a dependency and unused. Replace
-the `active`/`screen` ref-based switching in [Root.vue](../src/Root.vue) and
-[App.vue](../src/App.vue) with real routes. Today the app has no URLs — staff
-cannot bookmark a page, share a link, or use the back button, and a refresh
-dumps them to the dashboard. That alone will generate daily complaints.
+The frontend now runs entirely on the API. No fabricated data remains anywhere
+in the application.
 
-**2.2 Add a data layer.** TanStack Query (Vue Query) for caching, loading and
-error states. Every screen currently assumes data is instantly available and
-never fails; that assumption breaks the moment a network exists.
+**2.1 `vue-router`.** ✅ **Done** — real URLs throughout, lazy-loaded routes,
+and guards that resolve the session from the server on first navigation. Pages
+are bookmarkable, the back button works, and a hard refresh keeps you where you
+were. Authentication is no longer decided by a `localStorage` value anyone
+could edit.
 
-**2.3 Replace the generic workflow component.** `MightyAdminWorkflow.vue` is 428
-lines handling seventeen different `kind`s through branching. Split it: keep a
-reusable `<DataTable>` + `<RecordForm>` pair driven by schema, and give the real
-transaction flows (fee collection, mark entry, attendance) their own components
-with their own validation.
+**2.2 Data layer.** ✅ **Done** — TanStack Query with a shared fetch client.
+Every screen has real loading skeletons and error states, including a distinct
+"cannot reach the server" case. A 401 anywhere clears the session and redirects
+once, centrally, rather than being handled per component.
 
-**2.4 Delete the fabrication layer.** `defaultRecord()`, the `examples` map, and
-all `localStorage` persistence come out. Keep a seed script server-side instead.
+**2.3 Replace the generic workflow component.** ✅ **Done** —
+`MightyAdminWorkflow.vue` and `MightyRolePortal.vue` are gone. Students has its
+own list and detail views with real validation surfaced field by field from the
+server.
 
-**Exit criteria:** the six MVP modules read and write through the API; the app
-still works with `localStorage` disabled.
+**2.4 Delete the fabrication layer.** ✅ **Done** — `defaultRecord()`, the
+`examples` map, `mightyWorkflows.ts`, the client-side `permissions.ts`, the
+hardcoded credential map and all 28 `localStorage` calls are removed, along with
+`verify-mighty.mjs`. The navigation now declares each module's status: live
+modules work, planned modules show what is coming and explicitly state they are
+not connected. **The application contains no invented data.**
+
+**Exit criteria:** 🟡 Two of six MVP modules (dashboard, students) read and
+write through the API. The remaining four are blocked on their endpoints, not
+on the frontend — the shell, routing, data layer, permission gating and error
+handling are all in place and reusable.
+
+**Remaining before Phase 3:**
+1. Attendance, Notices, Exams/Marks and Fees endpoints + views.
+2. School setup and staff CRUD (carried over from Phase 1).
+3. Frontend component tests — currently only the API has automated coverage.
 
 ---
 
