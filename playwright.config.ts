@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 const API_PORT = process.env.E2E_API_PORT ?? '3210'
 const WEB_PORT = process.env.E2E_WEB_PORT ?? '4173'
 const DB = process.env.E2E_DB ?? 'edunova_e2e'
+// CI needs credentials; locally the unix socket is enough.
+const DB_URL = process.env.E2E_DATABASE_URL ?? `postgres://localhost:5432/${DB}`
 
 /**
  * End-to-end runs against a real API and a real database, both started here
@@ -38,7 +40,7 @@ export default defineConfig({
       env: {
         NODE_ENV: 'development',
         PORT: API_PORT,
-        DATABASE_URL: `postgres://localhost:5432/${DB}`,
+        DATABASE_URL: DB_URL,
         DB_APP_ROLE: 'erp_app',
         TENANT_SLUG: 'e2e-school',
         COOKIE_SECURE: 'false',

@@ -1,0 +1,72 @@
+# Render blueprint for the EduNova API.
+#
+# Deploy: Render Dashboard → New → Blueprint → point at this repo.
+# Secrets are marked `sync: false` so they are entered in the dashboard and
+# never live in git.
+
+services:
+  - type: web
+    name: edunova-api
+    runtime: node
+    region: singapore # closest Render region to India
+    plan: starter # 512MB; enough for one school. Watch memory under load.
+    rootDir: api
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+
+    # Render restarts the service if this stops returning 200.
+    healthCheckPath: /health
+
+    autoDeploy: false # deploy on an explicit click, not on every push to main
+
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+
+      - key: NODE_ENV
+        value: production
+
+      # Render sets PORT itself; the app reads it.
+      - key: HOST
+        value: 0.0.0.0
+
+      - key: APP_URL
+        value: https://schooldemo.blackprism.in
+      - key: CORS_ORIGIN
+        value: https://schooldemo.blackprism.in
+
+      # Scoped to the school subdomain, not all of blackprism.in, so the
+      # session cookie cannot travel to anything else hosted there.
+      - key: COOKIE_DOMAIN
+        value: .schooldemo.blackprism.in
+      - key: COOKIE_SECURE
+        value: "true"
+
+      # The role every request transaction downgrades to. It is what makes the
+      # RLS policies real — do not change it without reading migration 0010.
+      - key: DB_APP_ROLE
+        value: erp_app
+      - key: DB_POOL_MAX
+        value: "10"
+
+      - key: MAIL_DRIVER
+        value: smtp
+      - key: MAIL_FROM
+        value: EduNova <no-reply@blackprism.in>
+
+      - key: LOG_LEVEL
+        value: info
+
+      # ---- entered in the dashboard, never committed ----
+      - key: DATABASE_URL # Supabase direct connection, port 5432
+        sync: false
+      - key: TENANT_SLUG # must match what `npm run bootstrap` created
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false

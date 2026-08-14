@@ -125,7 +125,7 @@ async function buildPlan(tx: Tx, fromSectionId: string, toSectionId: string) {
           from enrolment e
           join student st on st.id = e.student_id and st.deleted_at is null
          where e.section_id = ${fromSectionId} and e.status = 'enrolled'
-         order by e.roll_no nulls last, st.first_name
+         order by (case when e.roll_no ~ '^[0-9]+$' then lpad(e.roll_no, 12, '0') else e.roll_no end) nulls last, st.first_name
       `
     : []
 

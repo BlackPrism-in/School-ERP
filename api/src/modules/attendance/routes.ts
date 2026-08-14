@@ -139,7 +139,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
           left join app_user u on u.id = ar.marked_by
          where e.section_id = ${query.sectionId}
            and e.status = 'enrolled'
-         order by e.roll_no nulls last, st.first_name
+         order by (case when e.roll_no ~ '^[0-9]+$' then lpad(e.roll_no, 12, '0') else e.roll_no end) nulls last, st.first_name
       `
 
       const windowMs = env().ATTENDANCE_EDIT_WINDOW_HOURS * 3_600_000
@@ -342,7 +342,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
            and ar.date between ${query.from} and ${query.to}
          where e.section_id = ${query.sectionId} and e.status = 'enrolled'
          group by e.id, st.first_name, st.last_name
-         order by e.roll_no nulls last, st.first_name
+         order by (case when e.roll_no ~ '^[0-9]+$' then lpad(e.roll_no, 12, '0') else e.roll_no end) nulls last, st.first_name
       `
 
       const students = rows.map((r) => {

@@ -6,6 +6,10 @@ const DB = process.env.E2E_DB ?? 'edunova_e2e'
 const ROOT = resolve(import.meta.dirname, '..')
 const MIGRATIONS = join(ROOT, 'supabase/migrations')
 
+/**
+ * dropdb/createdb/psql pick up PGHOST, PGUSER and PGPASSWORD from the
+ * environment, which is how CI reaches its service container.
+ */
 function psql(sql: string) {
   // -q suppresses the "INSERT 0 1" command tag, which would otherwise be
   // appended to the returned id.

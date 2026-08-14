@@ -243,7 +243,7 @@ export async function examRoutes(app: FastifyInstance) {
           join student st on st.id = e.student_id and st.deleted_at is null
           left join mark m on m.enrolment_id = e.id and m.exam_subject_id = ${examSubjectId}
          where e.section_id = ${query.sectionId} and e.status = 'enrolled'
-         order by e.roll_no nulls last, st.first_name
+         order by (case when e.roll_no ~ '^[0-9]+$' then lpad(e.roll_no, 12, '0') else e.roll_no end) nulls last, st.first_name
       `
 
       return {
