@@ -295,7 +295,8 @@ are working.
 | Signed out immediately after signing in | Cookie domain mismatch | `COOKIE_DOMAIN` must be `.schooldemo.blackprism.in` |
 | Render won't start: "COOKIE_SECURE must be true" | Working as intended | Set it to `true` |
 | Render won't start: "MAIL_DRIVER must be smtp" | Working as intended | Add SMTP settings, or see 3.2 |
-| Render build: `Cannot find name 'process'` / `Buffer` / `node:crypto` | `npm ci` omitted devDependencies because `NODE_ENV=production` | Build command must be `npm ci --include=dev && npm run build` — already fixed in `render.yaml` |
+| Render build: `Cannot find name 'process'` / `Buffer` / `node:crypto` | `npm ci` omitted devDependencies because `NODE_ENV=production` | Fixed by `api/.npmrc` (`include=dev`), which applies whatever build command Render runs |
+| Render log shows a build command you already changed | Render stores the build command when the blueprint is first applied and does **not** re-read `render.yaml` on later pushes | Settings → Build Command, edit by hand; or delete the service and re-apply the blueprint |
 | Vercel is stuck on the wrong branch | Production branch is fixed at project creation | Deploy from `main`; or Settings → Git → Production Branch, then redeploy |
 | Refreshing a page gives 404 | SPA rewrite missing | Confirm `vercel.json` is in the deployed commit |
 | `bootstrap` says the tenant exists | Already ran it | Either reuse it, or `psql "$SUPA" -c "delete from tenant where slug='schooldemo'"` and start over |
