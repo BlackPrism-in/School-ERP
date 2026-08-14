@@ -20,14 +20,17 @@ Check your tools:
 ```bash
 node --version    # must be 22 or higher
 psql --version    # any recent version
-git status        # should be on build/mvp, clean
+git status        # should be on main, clean
 ```
 
-Push the branch so Render and Vercel can see it:
+Push, so Render and Vercel can see it:
 
 ```bash
-git push -u origin build/mvp
+git push origin main
 ```
+
+> Deploy from **`main`**. Render and Vercel both default to it, and Vercel's
+> production branch is awkward to change after a project is created.
 
 ---
 
@@ -186,7 +189,7 @@ which looks like a broken app rather than a missing service.
 ### 3.1 Create the service
 
 1. Render → **New** → **Blueprint**
-2. Connect the repo, choose branch **`build/mvp`**
+2. Connect the repo (branch **`main`**)
 3. It reads [`render.yaml`](../render.yaml) and proposes `edunova-api`
 4. **Apply**
 
@@ -237,7 +240,6 @@ Do not go on until this returns ok.
 ### 4.1 Import
 
 1. Vercel → **Add New** → **Project** → import the repo
-2. Branch **`build/mvp`**
 3. Framework is detected as Vite; [`vercel.json`](../vercel.json) supplies the
    rest
 4. Add one environment variable:
@@ -293,6 +295,8 @@ are working.
 | Signed out immediately after signing in | Cookie domain mismatch | `COOKIE_DOMAIN` must be `.schooldemo.blackprism.in` |
 | Render won't start: "COOKIE_SECURE must be true" | Working as intended | Set it to `true` |
 | Render won't start: "MAIL_DRIVER must be smtp" | Working as intended | Add SMTP settings, or see 3.2 |
+| Render build: `Cannot find name 'process'` / `Buffer` / `node:crypto` | `npm ci` omitted devDependencies because `NODE_ENV=production` | Build command must be `npm ci --include=dev && npm run build` — already fixed in `render.yaml` |
+| Vercel is stuck on the wrong branch | Production branch is fixed at project creation | Deploy from `main`; or Settings → Git → Production Branch, then redeploy |
 | Refreshing a page gives 404 | SPA rewrite missing | Confirm `vercel.json` is in the deployed commit |
 | `bootstrap` says the tenant exists | Already ran it | Either reuse it, or `psql "$SUPA" -c "delete from tenant where slug='schooldemo'"` and start over |
 | `seed-demo` refuses to run | The tenant already has students | Intended safety. Same delete as above to reset |
