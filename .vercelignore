@@ -1,0 +1,17 @@
+# Vercel deploys the frontend only. The API runs on Render.
+#
+# Without this, Vercel treats the root-level `api/` directory as Serverless
+# Functions — it tries to compile every backend .ts file into its own endpoint,
+# which slows the build from seconds to a minute and would publish backend
+# modules at https://<frontend>/api/*. The API belongs on its own host with its
+# own database credentials, not as functions beside the static site.
+api/
+
+# Not needed to build or serve the SPA.
+supabase/
+e2e/
+docs/
+scripts/
+playwright.config.ts
+playwright-report/
+test-results/

@@ -302,6 +302,8 @@ are working.
 | Vercel is stuck on the wrong branch | Production branch is fixed at project creation | Deploy from `main`; or Settings → Git → Production Branch, then redeploy |
 | Refreshing a page gives 404 | SPA rewrite missing | Confirm `vercel.json` is in the deployed commit |
 | Vercel: `should NOT have additional property …` | `vercel.json` has a key outside Vercel's schema — it validates strictly and JSON has no comments | Remove the key; keep explanations in the docs |
+| Vercel build takes a minute and repeats "Using TypeScript" dozens of times | Vercel treats the root `api/` directory as Serverless Functions and compiles every backend file | `.vercelignore` excludes `api/` — the API belongs on Render |
+| Domain shows nothing / `HTTP 000` | DNS not pointed yet | Add the CNAME; check with `dig +short schooldemo.blackprism.in` |
 | `bootstrap` says the tenant exists | Already ran it | Either reuse it, or `psql "$SUPA" -c "delete from tenant where slug='schooldemo'"` and start over |
 | `seed-demo` refuses to run | The tenant already has students | Intended safety. Same delete as above to reset |
 
