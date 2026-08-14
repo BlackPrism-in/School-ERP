@@ -5,7 +5,7 @@
 # which slows the build from seconds to a minute and would publish backend
 # modules at https://<frontend>/api/*. The API belongs on its own host with its
 # own database credentials, not as functions beside the static site.
-api/
+/api/
 
 # Not needed to build or serve the SPA.
 supabase/
