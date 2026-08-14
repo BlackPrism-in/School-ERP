@@ -11,7 +11,11 @@ services:
     region: singapore # closest Render region to India
     plan: starter # 512MB; enough for one school. Watch memory under load.
     rootDir: api
-    buildCommand: npm ci && npm run build
+    # --include=dev is required: NODE_ENV=production (set below, and needed at
+    # runtime for the security guards) makes npm omit devDependencies, which is
+    # where typescript and @types/* live. Without this the build has no types
+    # and tsc fails on every `process`, `Buffer` and `node:crypto` reference.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
 
     # Render restarts the service if this stops returning 200.
