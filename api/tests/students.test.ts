@@ -4,7 +4,6 @@ import { closeDb, db } from '../src/db/client.js'
 import {
   assignTeacher,
   createStaff,
-  createStudentWithEnrolment,
   createUser,
   login,
   makeApp,

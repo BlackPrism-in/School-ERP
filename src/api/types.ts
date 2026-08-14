@@ -68,3 +68,86 @@ export type DashboardSummary = {
   sections: { total: number } | null
   availableModules: string[]
 }
+
+// ---------------------------------------------------------------- school
+
+export type ClassLevel = { id: string; name: string; code: string | null; sortOrder: number; sectionCount: number }
+export type Section = {
+  id: string
+  name: string
+  capacity: number | null
+  classId: string
+  className: string
+  sessionId: string
+  classTeacherName: string | null
+  studentCount: number
+}
+export type Subject = { id: string; name: string; code: string | null; kind: string }
+export type AcademicSession = {
+  id: string
+  name: string
+  startDate: string
+  endDate: string
+  isCurrent: boolean
+  status: string
+}
+export type Enrolment = {
+  id: string
+  rollNo: string | null
+  status: string
+  enrolledOn: string
+  sectionId: string
+  sectionName: string
+  className: string
+  sessionName: string
+  isCurrent: boolean
+}
+
+// ------------------------------------------------------------ attendance
+
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day' | 'leave' | 'excused'
+
+export type RegisterStudent = {
+  enrolmentId: string
+  studentId: string
+  name: string
+  admissionNo: string
+  rollNo: string | null
+  status: AttendanceStatus | null
+  remarks: string | null
+  markedAt: string | null
+  markedBy: string | null
+  needsCorrection: boolean
+}
+
+export type Register = {
+  section: { id: string; name: string; className: string; sessionName: string }
+  date: string
+  holiday: { name: string } | null
+  canMark: boolean
+  canCorrect: boolean
+  editWindowHours: number
+  students: RegisterStudent[]
+  summary: Record<AttendanceStatus | 'unmarked', number>
+}
+
+export type AttendanceReport = {
+  from: string
+  to: string
+  daysRecorded: number
+  students: {
+    enrolmentId: string
+    name: string
+    rollNo: string | null
+    present: number
+    absent: number
+    late: number
+    halfDay: number
+    leave: number
+    excused: number
+    markedDays: number
+    percentage: number | null
+  }[]
+}
+
+export type Holiday = { id: string; date: string; name: string; appliesTo: string }

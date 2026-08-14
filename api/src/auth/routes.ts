@@ -12,6 +12,7 @@ import {
 } from './session.js'
 import { generateRecoveryCodes, generateSecret, provisioningUri, verifyCode } from './totp.js'
 import { writeAudit } from '../lib/audit.js'
+import { passwordResetMail, sendMail } from '../lib/mailer.js'
 import { AppError, badRequest, unauthorized } from '../lib/errors.js'
 import { MFA_REQUIRED_ROLES, type RoleKey } from '../rbac/permissions.js'
 
@@ -328,10 +329,21 @@ export async function authRoutes(app: FastifyInstance) {
         requestId: request.id,
       })
 
-      // TODO(phase-1): hand `token` to the email provider. Until that is
-      // wired, the reset link is only obtainable from the database, which is
-      // strictly safer than logging it.
-      request.log.info({ userId: user.id }, 'password reset token issued')
+      const result = await sendMail(
+        passwordResetMail({
+          to: body.email,
+          token,
+          expiresMinutes: env().PASSWORD_RESET_TTL_MINUTES,
+        }),
+        request.log,
+      )
+      // The response is identical either way — telling the caller that
+      // delivery failed would confirm the address exists. Operators see it in
+      // the log; the user is told to try again if nothing arrives.
+      request.log.info(
+        { userId: user.id, delivered: result.delivered },
+        'password reset token issued',
+      )
     })
 
     return { ok: true, message: 'If that address has an account, a reset link is on its way.' }

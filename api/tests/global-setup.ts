@@ -24,7 +24,8 @@ export async function setup() {
   } catch (error) {
     throw new Error(
       `Could not create the test database "${DB}". Is PostgreSQL running?\n` +
-        `Try: brew services start postgresql@14\n\n${(error as Error).message}`,
+        `Try: brew services start postgresql@14`,
+      { cause: error },
     )
   }
 
@@ -37,7 +38,7 @@ export async function setup() {
       run('psql', ['-q', '-v', 'ON_ERROR_STOP=1', '-d', DB, '-f', join(MIGRATIONS, file)])
     } catch (error) {
       const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? ''
-      throw new Error(`Migration ${file} failed:\n${stderr}`)
+      throw new Error(`Migration ${file} failed:\n${stderr}`, { cause: error })
     }
   }
 }

@@ -227,12 +227,12 @@ version-specific behaviour.
 2. ✅ **Auth** — login, session, logout, reset, forced password change,
    lockout, TOTP MFA. Email delivery still to wire.
 3. ✅ **RBAC middleware** — permission check plus the row-scope resolvers in §3.
-4. ⬜ **Tenant + school setup** — sessions, branches, classes, sections, subjects.
-5. 🟡 **Students** CRUD done (API + UI); **staff** CRUD and CSV import with
-   dry-run preview still to build.
-6. ⬜ Then the four MVP modules, in order: **Attendance → Notices →
-   Exams/Marks → Fees.** Fees last: it is the one with the most rules, and by
-   then the audit, permission and testing patterns are settled.
+4. ✅ **Tenant + school setup** — sessions, classes, sections, subjects,
+   holidays. Deletes are refused while a row is in use, so a mid-year tidy-up
+   cannot take enrolment history with it.
+5. ✅ **Students & staff** CRUD, guardians, promotion, and CSV import with a
+   dry-run preview.
+6. ✅ The four MVP modules: **Attendance → Notices → Exams/Marks → Fees.**
 
 See [api/README.md](../api/README.md) for what exists and how to run it.
 
@@ -251,7 +251,7 @@ invariants) or maintaining a hand-written mirror that silently drifts.
 cd api && npm install && npm test
 ```
 
-65 tests across seven files, each run against a database rebuilt from these
+180 tests across fourteen files, each run against a database rebuilt from these
 migrations — so a broken migration fails the suite at setup rather than in
 production.
 
@@ -264,6 +264,13 @@ production.
 | `tenant-isolation.test.ts` | RLS through the real app path, unfiltered-query safety, pooled-connection context leakage, `erp_app` has no BYPASSRLS |
 | `rate-limit.test.ts` | Per-IP login throttling |
 | `dashboard.test.ts` | Scoped summary figures, permission-gated fields, audit actor labels |
+| `school.test.ts` | Setup CRUD, delete-while-in-use, one-current-session, section scoping, enrolment moves/roll clashes/capacity |
+| `attendance.test.ts` | Register save, date rules, holidays, the correction window, roster tampering, percentage arithmetic, audit coverage |
+| `fees.test.ts` | Exact decimal money, concessions on the bill, gapless receipts, oldest-first allocation, overpayment refusal, reversal with a separate number series |
+| `exams.test.ts` | Paper maxima, the state machine and its permissions, absent-with-marks, incomplete publication, rank/grade/outcome, locking |
+| `notices.test.ts` | Draft invisibility, every audience type, targeting that follows a section move, expiry, read receipts |
+| `staff.test.ts` | Records, generated logins, teaching assignments, resignation that disables the login and kills sessions |
+| `onboarding.test.ts` | CSV dry run, date/gender normalisation, all-or-nothing writes, guardians, DPDP consent, promotion |
 
 ---
 

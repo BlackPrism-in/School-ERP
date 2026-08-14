@@ -10,6 +10,16 @@ import { contextPlugin } from './plugins/context.js'
 import { authRoutes } from './auth/routes.js'
 import { studentRoutes } from './modules/students/routes.js'
 import { dashboardRoutes } from './modules/dashboard/routes.js'
+import { schoolRoutes } from './modules/school/routes.js'
+import { enrolmentRoutes } from './modules/enrolment/routes.js'
+import { attendanceRoutes } from './modules/attendance/routes.js'
+import { staffRoutes } from './modules/staff/routes.js'
+import { noticeRoutes } from './modules/notices/routes.js'
+import { examRoutes } from './modules/exams/routes.js'
+import { feeRoutes } from './modules/fees/routes.js'
+import { studentImportRoutes } from './modules/students/import.js'
+import { guardianRoutes } from './modules/students/guardians.js'
+import { promotionRoutes } from './modules/enrolment/promotion.js'
 import { AppError } from './lib/errors.js'
 import { db } from './db/client.js'
 
@@ -107,6 +117,16 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(studentRoutes)
   await app.register(dashboardRoutes)
+  await app.register(schoolRoutes)
+  await app.register(enrolmentRoutes)
+  await app.register(attendanceRoutes)
+  await app.register(staffRoutes)
+  await app.register(noticeRoutes)
+  await app.register(examRoutes)
+  await app.register(feeRoutes)
+  await app.register(studentImportRoutes)
+  await app.register(guardianRoutes)
+  await app.register(promotionRoutes)
 
   return app
 }

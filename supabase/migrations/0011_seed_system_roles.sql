@@ -19,8 +19,13 @@ declare
       'student.read','student.write','student.delete','student.import',
       'staff.read','staff.write','enrolment.manage',
       'attendance.read','attendance.mark','attendance.correct',
-      'fee.read','fee.configure','fee.collect','fee.concession',
-      'exam.read','exam.configure','exam.publish',
+      -- fee.reverse belongs here: an admin can already zero a bill with
+      -- fee.concession, so withholding reversal would be an incoherent
+      -- boundary that just leaves bounced cheques waiting for the principal.
+      -- Reversal is safe by construction — the original receipt is immutable,
+      -- a written reason is required, and the whole act is audited.
+      'fee.read','fee.configure','fee.collect','fee.concession','fee.reverse',
+      'exam.read','exam.configure','exam.mark','exam.moderate','exam.publish',
       'notice.read','notice.write','report.read',
       'user.manage','settings.manage'
     ),

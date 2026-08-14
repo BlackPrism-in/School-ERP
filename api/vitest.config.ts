@@ -31,6 +31,9 @@ export default defineConfig({
       // suite. It is covered explicitly in tests/rate-limit.test.ts, which
       // builds an app with a deliberately tiny limit.
       LOGIN_RATE_LIMIT_MAX: '10000',
+      // Keeps sent mail in memory so tests can assert on it.
+      MAIL_DRIVER: 'capture',
+      APP_URL: 'http://localhost:5173',
     },
   },
 })

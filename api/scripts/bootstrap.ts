@@ -75,6 +75,31 @@ try {
       values (${tenant!.id}, 'MAIN', 'Main Campus', true)
     `
 
+    // A default grading scheme. Without one, publishing results yields
+    // percentages and pass/fail but no letter grades, which looks broken on a
+    // report card. The school can edit the bands later.
+    const [scheme] = await tx<{ id: string }[]>`
+      insert into grading_scheme (tenant_id, name, is_default)
+      values (${tenant!.id}, 'Standard', true) returning id
+    `
+    const bands: [string, number, number, number, boolean][] = [
+      ['A1', 91, 100, 10, false],
+      ['A2', 81, 90.99, 9, false],
+      ['B1', 71, 80.99, 8, false],
+      ['B2', 61, 70.99, 7, false],
+      ['C1', 51, 60.99, 6, false],
+      ['C2', 41, 50.99, 5, false],
+      ['D', 33, 40.99, 4, false],
+      ['E', 0, 32.99, 0, true],
+    ]
+    for (const [grade, min, max, point, failing] of bands) {
+      await tx`
+        insert into grade_band (tenant_id, grading_scheme_id, grade, min_percent,
+                                max_percent, grade_point, is_failing)
+        values (${tenant!.id}, ${scheme!.id}, ${grade}, ${min}, ${max}, ${point}, ${failing})
+      `
+    }
+
     return { tenantId: tenant!.id, userId: user!.id }
   })
 

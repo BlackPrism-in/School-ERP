@@ -106,14 +106,16 @@ Before any code:
 
 ---
 
-### Phase 1 — Foundation 🟡 **Core complete**
+### Phase 1 — Foundation ✅ **DONE**
 
-This is the phase that turns a demo into an application. The security spine —
-1.1 through 1.5 — is built and tested; the remaining work is breadth (more
-CRUD modules), not depth.
+This is the phase that turns a demo into an application.
 
-**Built so far:** [`api/`](../api/) — Fastify + TypeScript, 65 passing tests,
+**Built:** [`api/`](../api/) — Fastify + TypeScript, 180 passing tests,
 `npm test` in `api/`. See [api/README.md](../api/README.md).
+
+⚠️ **One item deferred:** email delivery. Password reset creates a valid token
+but nothing sends it, so it is only reachable from the database. This is the
+last blocker before real users exist.
 
 **1.1 Data model.** ✅ **Done** — 13 migrations, 54 tables, 13 database-enforced
 invariants, all green under `./scripts/db-test.sh`. See
@@ -157,17 +159,13 @@ failed logins, sign-outs, sensitive reads) are written explicitly.
 covered by `tests/students.test.ts`: an authorised admin creates a student, it
 persists in Postgres, and the audit log records the insert attributed to them.
 
-**Remaining before Phase 2:**
+**Carried into Phase 4:**
 1. Wire an email provider so password reset works for real users.
-2. School setup CRUD — sessions, branches, classes, sections, subjects.
-3. Staff CRUD, and linking staff to user accounts.
-4. CSV student import with a dry-run preview (schools onboard from a
-   spreadsheet, always).
-5. CI: typecheck → test → build on every push.
+2. CI: typecheck → test → build on every push.
 
 ---
 
-### Phase 2 — Wire the UI to the backend 🟡 **Core complete**
+### Phase 2 — Wire the UI to the backend ✅ **DONE**
 
 The frontend now runs entirely on the API. No fabricated data remains anywhere
 in the application.
@@ -195,39 +193,75 @@ hardcoded credential map and all 28 `localStorage` calls are removed, along with
 modules work, planned modules show what is coming and explicitly state they are
 not connected. **The application contains no invented data.**
 
-**Exit criteria:** 🟡 Two of six MVP modules (dashboard, students) read and
-write through the API. The remaining four are blocked on their endpoints, not
-on the frontend — the shell, routing, data layer, permission gating and error
-handling are all in place and reusable.
+**2.5 Frontend tests.** ✅ **Done** — 28 tests over the fetch client (query
+encoding, error envelopes, offline vs rejection, 401/403 discrimination), the
+session store (fail-closed on unexpected errors), the navigation matrix
+(who sees what), and the error component. `npm test` at the repo root.
 
-**Remaining before Phase 3:**
-1. Attendance, Notices, Exams/Marks and Fees endpoints + views.
-2. School setup and staff CRUD (carried over from Phase 1).
-3. Frontend component tests — currently only the API has automated coverage.
+**Exit criteria:** ✅ **Met** — every MVP module reads and writes through the
+API. Nothing in the application is fabricated.
 
 ---
 
-### Phase 3 — Make the MVP modules actually correct (5–7 weeks)
+### Phase 3 — Make the MVP modules actually correct ✅ **DONE**
 
-Depth over breadth. Each of these needs real business rules the demo only mimes:
+Depth over breadth. All four MVP modules are built with their real business
+rules, plus staff, guardians, promotion and bulk import.
 
-- **Students & enrolment** — admission numbers, documents, guardians, transfer,
-  promotion between sessions, alumni. Bulk CSV import with validation and a
-  dry-run preview (schools onboard with a spreadsheet, always).
-- **Attendance** — per-period vs per-day, holidays, half-days, leave approval,
-  correction window with audit, monthly and statutory reports.
-- **Fees** — the highest-risk module. Fee heads, class/category-wise structures,
-  concessions, instalment schedules, late fines by rule, **immutable numbered
-  receipts**, partial payments, refunds, reconciliation, daily collection
-  report. Money bugs destroy trust faster than anything else.
-- **Exams & marks** — grading schemes, weighted components, moderation, result
-  locking after publication, report-card PDF generation.
+**180 API tests across 14 files.** `npm test` in `api/`.
+
+- **Students & enrolment** ✅ **Done** — one enrolment per session; moving
+  sections reuses that row so register history follows the child. Roll-number
+  uniqueness and section capacity enforced. Guardians with sibling de-duplication
+  on phone match, and DPDP consent recorded per purpose against a named guardian
+  (consent nobody can be attributed to is refused). Year-end promotion previews
+  first and inserts a new enrolment rather than mutating the old one, so last
+  year's attendance, fees and marks stay correct forever. Bulk CSV import with
+  a dry run, real-world header aliases, dd/mm/yyyy dates, and all-or-nothing
+  writes. *Still to build: document uploads and alumni.*
+- **Attendance** ✅ **Done** — one table serves both per-day and per-period
+  marking (`period_id` null means whole day), so a school changing its mind
+  mid-year is a config change, not a migration. Rules enforced server-side:
+  no future dates, nothing outside the academic session, nothing on a declared
+  holiday, and a holiday cannot be declared over a day already marked. Saves
+  are all-or-nothing — a half-written register is worse than none. Inside the
+  48-hour window an edit is an edit; beyond it, amending a settled record
+  requires the `attendance.correct` permission **and** a written reason, and is
+  kept in `attendance_correction` permanently. Percentages count half-days as
+  half present and exclude approved leave from the denominator rather than
+  counting it against the child. Report exports to CSV.
+  *Still to build: per-period marking UI, leave-approval workflow, statutory
+  monthly formats.*
+- **Fees** ✅ **Done** — the highest-risk module, so money is `numeric(12,2)`
+  end to end and handled as a **string** in JavaScript; all arithmetic happens
+  in Postgres. `0.1 + 0.2` is not `0.3`, and that error spread across 1,200
+  termly invoices is unpickable. Fee heads, class-wise structures, concessions
+  shown as a line on the bill rather than a quietly smaller number, gapless
+  receipts, oldest-invoice-first allocation, partial payments, refusal of
+  overpayment (an unexplained credit is how reconciliation goes wrong),
+  reversal that leaves the original receipt exactly as issued and takes its
+  own REV/ number series, a daybook that ties out by method, and an
+  outstanding-balance report. *Still to build: instalment schedules and
+  automatic late fines — the tables exist, the rules are not wired.*
+- **Exams & marks** ✅ **Done** — the state machine is the design:
+  draft → scheduled → mark_entry → moderation → published → locked, with the
+  permission checked per hop and illegal transitions refused. Marks are bounded
+  by each paper's maximum (enforced by trigger, not just the API), an absent
+  student cannot also carry marks, publication refuses while any mark is
+  missing, and results are a stored snapshot so a report card in a parent's
+  hand cannot silently change. *Still to build: weighted term aggregation and
+  report-card PDFs.*
 - **Staff** — records, attendance, leave. Defer payroll: it is statutory
   (PF/ESI/TDS) and a project of its own.
-- **Notices** — targeted by class/section/role, read receipts.
+- **Notices** ✅ **Done** — targeting by everyone/role/class/section/student,
+  resolved per request so a student who changes section immediately stops
+  seeing their old class's notices. Draft and publish are separate acts,
+  publishing to nobody is refused, and read receipts are recorded on open.
 
-**Exit criteria:** a term's worth of real historical data from the school
-imported and reconciling against their existing records.
+**Exit criteria:** ✅ **Unblocked** — CSV import is built and verified against a
+spreadsheet with real-world headers and deliberately bad rows. The remaining
+step is not code: it needs the school's actual data and their sign-off that it
+reconciles.
 
 ---
 

@@ -15,7 +15,7 @@ for f in ../supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -d edunova_dev
 ```bash
 cp .env.example .env
 npm install
-npm run bootstrap -- --name "Your School" --email admin@yourschool.edu
+npm run bootstrap -- --name "Your School" --email admin@yourschool.edu --admin-name "Your Name"
 npm run dev
 ```
 
@@ -53,6 +53,21 @@ run, so a broken migration fails the suite at setup rather than in production.
 | POST | `/students` | `student.write` | |
 | PATCH | `/students/:id` | `student.write` | |
 | DELETE | `/students/:id` | `student.delete` | Withdraws; never hard-deletes |
+| POST | `/students/import` | `student.import` | Dry run by default; all-or-nothing on commit |
+| GET/POST | `/students/:id/guardians` | `student.read` / `student.write` | De-duplicates on phone |
+| GET/POST | `/students/:id/consent` | `student.read` / `student.write` | DPDP, per purpose |
+| POST | `/students/:id/enrolment` | `enrolment.manage` | Moving section reuses the row |
+| POST | `/enrolment/promote[/preview]` | `enrolment.manage` | Preview first; inserts, never mutates |
+| GET/POST | `/school/{sessions,classes,sections,subjects}` | read: any · write: `settings.manage` | Delete refused while in use |
+| GET/POST | `/staff` … `/staff/:id/account` | `staff.read` / `staff.write` / `user.manage` | Generated password shown once |
+| GET/POST | `/attendance/register` | `attendance.read` / `attendance.mark` | Date + holiday rules; correction window |
+| GET | `/attendance/report` | `attendance.read` | Half-days count half; leave excluded |
+| GET/POST | `/notices` … `/notices/:id/publish` | `notice.read` / `notice.write` | Audience resolved per request |
+| GET/POST | `/exams` … `/exams/:id/status` | `exam.*` | State machine, permission per hop |
+| POST | `/exams/subjects/:id/marks` | `exam.mark` | Bounded by the paper maximum |
+| POST | `/fees/collect` | `fee.collect` | Oldest invoice first; overpayment refused |
+| POST | `/fees/payments/:id/reverse` | `fee.reverse` | Original receipt untouched |
+| GET | `/fees/{daybook,outstanding}` | `fee.read` | |
 
 Every route is authenticated **by default**. Public routes opt out explicitly
 with `config: { public: true }`, so a new route added without thinking is
@@ -97,4 +112,7 @@ See `.env.example`. Two settings matter more than the rest:
   there is no provider attached, so the token is only obtainable from the
   database. This is deliberately safer than logging it, and it is the first
   thing to connect before real users exist.
-- School setup, staff and CSV import endpoints — next in the build order.
+- **Fee instalments and automatic late fines.** The tables exist
+  (`fee_instalment`, `fine_rule`) but only a single "Full payment" instalment
+  is created and fines are never applied.
+- **Staff attendance and leave**, document uploads, and report-card PDFs.

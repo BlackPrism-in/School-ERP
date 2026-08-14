@@ -2,8 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { ArrowLeft, HeartPulse, Pencil, UserMinus } from 'lucide-vue-next'
-import { students, type StudentInput } from '../../api/endpoints'
+import { ArrowLeft, GraduationCap, HeartPulse, Pencil, UserMinus } from 'lucide-vue-next'
+import { enrolment as enrolmentApi, school, students, type StudentInput } from '../../api/endpoints'
 import { ApiError } from '../../api/client'
 import { can } from '../../session'
 import LoadingPanel from '../../components/LoadingPanel.vue'
@@ -73,6 +73,53 @@ const withdraw = useMutation({
 
 const confirmingWithdraw = ref(false)
 
+// ------------------------------------------------------------- enrolment
+
+const enrolments = useQuery({
+  queryKey: computed(() => ['students', id.value, 'enrolment']),
+  queryFn: () => enrolmentApi.forStudent(id.value),
+})
+
+const sections = useQuery({
+  queryKey: ['school', 'sections'],
+  queryFn: () => school.sections(),
+  enabled: computed(() => can('enrolment.manage')),
+  staleTime: 300_000,
+})
+
+const currentEnrolment = computed(() => enrolments.data.value?.data.find((e) => e.isCurrent) ?? null)
+
+const enrolForm = ref({ sectionId: '', rollNo: '' })
+const enrolError = ref('')
+const showEnrol = ref(false)
+
+const enrol = useMutation({
+  mutationFn: () =>
+    enrolmentApi.enrol(id.value, {
+      sectionId: enrolForm.value.sectionId,
+      ...(enrolForm.value.rollNo.trim() ? { rollNo: enrolForm.value.rollNo.trim() } : {}),
+    }),
+  onSuccess: async () => {
+    showEnrol.value = false
+    enrolForm.value = { sectionId: '', rollNo: '' }
+    enrolError.value = ''
+    await queryClient.invalidateQueries({ queryKey: ['students'] })
+    await queryClient.invalidateQueries({ queryKey: ['school'] })
+  },
+  onError: (caught) => {
+    enrolError.value = caught instanceof ApiError ? caught.message : 'Could not save the enrolment.'
+  },
+})
+
+function openEnrol() {
+  enrolForm.value = {
+    sectionId: currentEnrolment.value?.sectionId ?? '',
+    rollNo: currentEnrolment.value?.rollNo ?? '',
+  }
+  enrolError.value = ''
+  showEnrol.value = true
+}
+
 function save() {
   formErrors.value = {}
   formError.value = ''
@@ -133,6 +180,33 @@ function formatDate(value: string | null | undefined) {
           <div><dt>Admitted</dt><dd>{{ formatDate(data.admissionDate) }}</dd></div>
           <div><dt>Roll number</dt><dd>{{ data.rollNo || '—' }}</dd></div>
         </dl>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h3><GraduationCap :size="16" /> Enrolment</h3>
+            <p>Which class this student sits in for the current session.</p>
+          </div>
+          <button v-if="can('enrolment.manage')" class="text-action" @click="openEnrol">
+            {{ currentEnrolment ? 'Change class' : 'Enrol' }}
+          </button>
+        </div>
+
+        <template v-if="currentEnrolment">
+          <dl class="detail-grid">
+            <div><dt>Class</dt><dd>{{ currentEnrolment.className }} · {{ currentEnrolment.sectionName }}</dd></div>
+            <div><dt>Roll number</dt><dd>{{ currentEnrolment.rollNo || '—' }}</dd></div>
+            <div><dt>Session</dt><dd>{{ currentEnrolment.sessionName }}</dd></div>
+          </dl>
+        </template>
+        <p v-else class="address"><span class="muted">Not enrolled in the current session.</span></p>
+
+        <ul v-if="(enrolments.data.value?.data.length ?? 0) > 1" class="history">
+          <li v-for="e in enrolments.data.value?.data.filter((x) => !x.isCurrent)" :key="e.id">
+            {{ e.sessionName }} — {{ e.className }} · {{ e.sectionName }}
+          </li>
+        </ul>
       </article>
 
       <article class="panel">
@@ -206,6 +280,45 @@ function formatDate(value: string | null | undefined) {
       </form>
     </article>
 
+    <!-- Enrol / change class -->
+    <div v-if="showEnrol" class="modal-backdrop" @click.self="showEnrol = false">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2>{{ currentEnrolment ? 'Change class' : 'Enrol student' }}</h2>
+        <p v-if="currentEnrolment" class="confirm-body">
+          Moving a student keeps their existing register history — attendance follows the enrolment,
+          not the section.
+        </p>
+
+        <form @submit.prevent="enrol.mutate()">
+          <div class="form-grid enrol-grid">
+            <label class="span-2">
+              Class and section
+              <select v-model="enrolForm.sectionId" required>
+                <option value="" disabled>Choose a section…</option>
+                <option v-for="s in sections.data.value?.data ?? []" :key="s.id" :value="s.id">
+                  {{ s.className }} · {{ s.name }}
+                  <template v-if="s.capacity"> ({{ s.studentCount }}/{{ s.capacity }})</template>
+                </option>
+              </select>
+            </label>
+            <label>
+              Roll number
+              <input v-model="enrolForm.rollNo" maxlength="20" placeholder="Optional" />
+            </label>
+          </div>
+
+          <p v-if="enrolError" class="login-error">{{ enrolError }}</p>
+
+          <div class="modal-actions">
+            <button type="button" class="secondary" @click="showEnrol = false">Cancel</button>
+            <button type="submit" class="primary" :disabled="!enrolForm.sectionId || enrol.isPending.value">
+              {{ enrol.isPending.value ? 'Saving…' : (currentEnrolment ? 'Move student' : 'Enrol') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Withdraw confirmation -->
     <div v-if="confirmingWithdraw" class="modal-backdrop" @click.self="confirmingWithdraw = false">
       <div class="modal" role="dialog" aria-modal="true">
@@ -227,6 +340,22 @@ function formatDate(value: string | null | undefined) {
 </template>
 
 <style scoped>
+.panel-head h3 { display: flex; align-items: center; gap: 8px; }
+.text-action {
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: none;
+  border-radius: 9px;
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.history { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid rgba(148,163,184,0.16); font-size: 0.84rem; opacity: 0.65; }
+.history li { padding: 3px 0; }
+.enrol-grid { grid-template-columns: 1fr 140px; }
+@media (max-width: 560px) { .enrol-grid { grid-template-columns: 1fr; } }
+
 .back-link {
   display: inline-flex;
   align-items: center;

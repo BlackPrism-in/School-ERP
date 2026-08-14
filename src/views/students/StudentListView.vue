@@ -50,13 +50,27 @@ const form = ref<StudentInput>({ admissionNo: '', firstName: '' })
 const formErrors = ref<Record<string, string>>({})
 const formError = ref('')
 
-watch(showForm, (open) => {
+/**
+ * Opening and closing the dialog are explicit calls, not a watcher on
+ * `showForm`.
+ *
+ * A watcher ran a tick *after* the state changed, so on a successful save the
+ * sequence was: navigate to the new student, then the watcher fires
+ * `router.replace` and bounces straight back to the list. Doing the URL sync
+ * inline keeps it ordered with everything else.
+ */
+function openForm() {
+  showForm.value = true
+  router.replace({ query: { ...route.query, new: '1' } })
+}
+
+function closeForm() {
+  showForm.value = false
+  resetForm()
   const query = { ...route.query }
-  if (open) query.new = '1'
-  else delete query.new
+  delete query.new
   router.replace({ query })
-  if (!open) resetForm()
-})
+}
 
 function resetForm() {
   form.value = { admissionNo: '', firstName: '' }
@@ -69,7 +83,10 @@ const createStudent = useMutation({
   onSuccess: async (created) => {
     await queryClient.invalidateQueries({ queryKey: ['students'] })
     await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    // Close without the URL sync — we are navigating away from the list
+    // entirely, so rewriting its query would undo the push.
     showForm.value = false
+    resetForm()
     router.push(`/app/students/${created.id}`)
   },
   onError: (caught) => {
@@ -105,7 +122,7 @@ function fullName(s: { firstName: string; lastName: string | null }) {
       <p v-if="data">{{ data.total }} {{ data.total === 1 ? 'record' : 'records' }} you can access</p>
     </div>
     <div v-if="can('student.write')" class="page-actions">
-      <button class="primary" @click="showForm = true"><Plus :size="17" /> Add student</button>
+      <button class="primary" @click="openForm"><Plus :size="17" /> Add student</button>
     </div>
   </div>
 
@@ -175,11 +192,11 @@ function fullName(s: { firstName: string; lastName: string | null }) {
   </template>
 
   <!-- Create -->
-  <div v-if="showForm" class="modal-backdrop" @click.self="showForm = false">
+  <div v-if="showForm" class="modal-backdrop" @click.self="closeForm">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-student-title">
       <div class="modal-head">
         <h2 id="add-student-title">Add student</h2>
-        <button aria-label="Close" @click="showForm = false"><X :size="18" /></button>
+        <button aria-label="Close" @click="closeForm"><X :size="18" /></button>
       </div>
 
       <form @submit.prevent="submitForm">
@@ -222,7 +239,7 @@ function fullName(s: { firstName: string; lastName: string | null }) {
         <p v-if="formError" class="login-error">{{ formError }}</p>
 
         <div class="modal-actions">
-          <button type="button" class="secondary" @click="showForm = false">Cancel</button>
+          <button type="button" class="secondary" @click="closeForm">Cancel</button>
           <button type="submit" class="primary" :disabled="createStudent.isPending.value">
             {{ createStudent.isPending.value ? 'Saving…' : 'Add student' }}
           </button>

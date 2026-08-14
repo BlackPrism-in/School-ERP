@@ -138,7 +138,9 @@ export async function studentRoutes(app: FastifyInstance) {
    * a student, it persists, and the audit trigger records the write.
    */
   app.post('/students', async (request, reply) => {
-    const principal = request.require('student.write')
+    // The permission check is the point; the principal itself is not needed
+    // here because the audit trigger picks up the actor from app.user_id.
+    request.require('student.write')
     const body = studentInput.parse(request.body)
 
     const created = await request.tx(async (tx) => {

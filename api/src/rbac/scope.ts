@@ -73,6 +73,23 @@ export async function resolveAccessScope(
 }
 
 /**
+ * Throws unless the scope permits this section. The attendance register is
+ * addressed by section, so this is the gate that stops a teacher marking a
+ * class they do not teach.
+ */
+export function assertSectionInScope(scope: AccessScope, sectionId: string): void {
+  if (scope.kind === 'all') return
+  if (scope.kind === 'sections') {
+    if (!scope.sectionIds.includes(sectionId)) {
+      throw forbidden('You are not assigned to that class.')
+    }
+    return
+  }
+  // Students and guardians have no business addressing a whole section.
+  throw forbidden('You do not have access to class registers.')
+}
+
+/**
  * Throws unless the scope permits this student. Call it on every single-record
  * read and write — a permission check alone does not stop a teacher from
  * typing another section's student id into the URL.

@@ -41,6 +41,28 @@ const schema = z.object({
   LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
 
+  /**
+   * How long after marking attendance a record can be amended as a normal
+   * edit. Beyond this it becomes a *correction*: it needs the
+   * attendance.correct permission, a written reason, and it is recorded in
+   * attendance_correction as well as the audit log.
+   */
+  ATTENDANCE_EDIT_WINDOW_HOURS: z.coerce.number().int().positive().default(48),
+
+  /** Public URL of the frontend; used to build links in emails. */
+  APP_URL: z.string().url().default('http://localhost:5173'),
+
+  /**
+   * smtp = real delivery · console = log it (development) ·
+   * capture = keep in memory (tests). Production refuses anything but smtp.
+   */
+  MAIL_DRIVER: z.enum(['smtp', 'console', 'capture']).default('console'),
+  MAIL_FROM: z.string().default('EduNova <no-reply@example.school>'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })
@@ -60,6 +82,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 
   if (parsed.data.NODE_ENV === 'production' && !parsed.data.COOKIE_SECURE) {
     throw new Error('COOKIE_SECURE must be true in production.')
+  }
+
+  // A production deployment that silently logs password-reset links instead of
+  // sending them would look like it works right up until a locked-out
+  // administrator needs it.
+  if (parsed.data.NODE_ENV === 'production') {
+    if (parsed.data.MAIL_DRIVER !== 'smtp') {
+      throw new Error('MAIL_DRIVER must be "smtp" in production.')
+    }
+    if (!parsed.data.SMTP_HOST) {
+      throw new Error('SMTP_HOST is required when MAIL_DRIVER is "smtp".')
+    }
   }
 
   return parsed.data

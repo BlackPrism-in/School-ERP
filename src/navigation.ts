@@ -9,6 +9,7 @@ import {
   Library,
   Megaphone,
   Settings,
+  Upload,
   UserCog,
   Users,
   WalletCards,
@@ -17,13 +18,13 @@ import {
 import type { Permission, RoleKey } from './api/types'
 
 /**
- * The navigation now describes what the system can actually do.
+ * The navigation describes what the system can actually do.
  *
- * The previous version listed 149 routes, every one of which rendered
- * fabricated rows from a schema. That was useful as a specification and
- * actively misleading as an application — a school cannot tell a working
- * screen from a mock. Each entry now declares its status, and anything not
- * yet backed by an API says so plainly instead of showing invented data.
+ * An earlier version listed 149 routes, every one of which rendered fabricated
+ * rows from a schema — useful as a specification and actively misleading as an
+ * application, because a school cannot tell a working screen from a mock. Each
+ * entry declares its status, and anything not yet backed by an API says so
+ * plainly instead of showing invented data.
  */
 export type NavStatus = 'live' | 'planned'
 
@@ -39,14 +40,14 @@ export type NavItem = {
   /** Restricts to specific roles on top of the permission check. */
   roles?: RoleKey[]
   section?: string
-  /**
-   * Which build phase this belongs to. `section` only marks the first item of
-   * a visual group, so it cannot be used to filter a whole group.
-   */
+  /** Which build phase this belongs to; `section` only marks a group's first item. */
   phase?: 'mvp' | 'later'
   /** Shown on the roadmap page for planned modules. */
   summary?: string
 }
+
+/** Roles that see the roadmap for modules still being built. */
+const STAFF_ROLES: RoleKey[] = ['superadmin', 'admin', 'teacher', 'accountant']
 
 const items: NavItem[] = [
   {
@@ -57,72 +58,45 @@ const items: NavItem[] = [
     to: '/app',
     section: 'Workspace',
   },
-  {
-    id: 'students',
-    label: 'Students',
-    icon: Users,
-    status: 'live',
-    to: '/app/students',
-    permission: 'student.read',
-  },
+  { id: 'students', label: 'Students', icon: Users, status: 'live', to: '/app/students', permission: 'student.read' },
+  { id: 'staff', label: 'Staff', icon: UserCog, status: 'live', to: '/app/staff', permission: 'staff.read' },
 
-  // The four MVP modules, in the order they are being built.
   {
     id: 'attendance',
     label: 'Attendance',
     icon: ClipboardCheck,
-    status: 'planned',
-    to: '/app/module/attendance',
-    phase: 'mvp',
+    status: 'live',
+    to: '/app/attendance',
     permission: 'attendance.read',
-    section: 'Coming next',
-    summary:
-      'Daily and per-period registers, holidays, leave approval, corrections with an audit trail, and monthly reports.',
+    section: 'Daily work',
   },
-  {
-    id: 'notices',
-    label: 'Notices',
-    icon: Megaphone,
-    status: 'planned',
-    to: '/app/module/notices',
-    phase: 'mvp',
-    permission: 'notice.read',
-    summary: 'Announcements targeted by class, section or role, with read receipts.',
-  },
-  {
-    id: 'exams',
-    label: 'Exams & Marks',
-    icon: FileText,
-    status: 'planned',
-    to: '/app/module/exams',
-    phase: 'mvp',
-    permission: 'exam.read',
-    summary:
-      'Exam scheduling, mark entry bounded by each paper’s maximum, moderation, result publication and report cards.',
-  },
-  {
-    id: 'fees',
-    label: 'Fees',
-    icon: WalletCards,
-    status: 'planned',
-    to: '/app/module/fees',
-    phase: 'mvp',
-    permission: 'fee.read',
-    summary:
-      'Fee structures, concessions, instalments, late-fee rules, gapless numbered receipts, partial payments and reconciliation.',
-  },
+  { id: 'notices', label: 'Notices', icon: Megaphone, status: 'live', to: '/app/notices', permission: 'notice.read' },
+  { id: 'exams', label: 'Exams & Marks', icon: FileText, status: 'live', to: '/app/exams', permission: 'exam.read' },
+  { id: 'fees', label: 'Fees', icon: WalletCards, status: 'live', to: '/app/fees', permission: 'fee.read' },
 
   {
-    id: 'staff',
-    label: 'Staff',
-    icon: UserCog,
-    status: 'planned',
-    to: '/app/module/staff',
-    phase: 'later',
-    permission: 'staff.read',
-    section: 'Later phases',
-    summary: 'Staff records, attendance and leave. Payroll is a separate project.',
+    id: 'attendance-report',
+    label: 'Attendance report',
+    icon: BarChart3,
+    status: 'live',
+    to: '/app/attendance/report',
+    permission: 'attendance.read',
+    // A class-wide report needs section scope. Students and guardians hold
+    // attendance.read for their own record, so without this they were shown a
+    // link that always 403s.
+    roles: ['superadmin', 'admin', 'teacher'],
+    section: 'Admin',
   },
+  {
+    id: 'student-import',
+    label: 'Import students',
+    icon: Upload,
+    status: 'live',
+    to: '/app/students/import',
+    permission: 'student.import',
+  },
+  { id: 'setup', label: 'School setup', icon: Settings, status: 'live', to: '/app/setup', permission: 'settings.manage' },
+
   {
     id: 'timetable',
     label: 'Timetable',
@@ -130,6 +104,8 @@ const items: NavItem[] = [
     status: 'planned',
     to: '/app/module/timetable',
     phase: 'later',
+    roles: STAFF_ROLES,
+    section: 'Later phases',
     summary: 'Class routines, period allocation and teacher schedules.',
   },
   {
@@ -139,6 +115,7 @@ const items: NavItem[] = [
     status: 'planned',
     to: '/app/module/library',
     phase: 'later',
+    roles: STAFF_ROLES,
     summary: 'Catalogue, members, issue and return.',
   },
   {
@@ -148,6 +125,7 @@ const items: NavItem[] = [
     status: 'planned',
     to: '/app/module/transport',
     phase: 'later',
+    roles: STAFF_ROLES,
     summary: 'Buses, routes, stops and riders.',
   },
   {
@@ -157,34 +135,12 @@ const items: NavItem[] = [
     status: 'planned',
     to: '/app/module/hostel',
     phase: 'later',
+    roles: STAFF_ROLES,
     summary: 'Rooms, residents, meals and billing.',
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: BarChart3,
-    status: 'planned',
-    to: '/app/module/reports',
-    phase: 'later',
-    permission: 'report.read',
-    summary: 'Operational and academic reporting with exports.',
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    status: 'planned',
-    to: '/app/module/settings',
-    phase: 'later',
-    permission: 'settings.manage',
-    summary: 'School profile, academic sessions, classes, sections, subjects and user accounts.',
   },
 ]
 
-export function navigationFor(
-  permissions: readonly Permission[],
-  roles: readonly RoleKey[],
-): NavItem[] {
+export function navigationFor(permissions: readonly Permission[], roles: readonly RoleKey[]): NavItem[] {
   return items.filter((item) => {
     if (item.permission && !permissions.includes(item.permission)) return false
     if (item.roles && !item.roles.some((r) => roles.includes(r))) return false

@@ -3,12 +3,15 @@
 A school management system built in phases. Vue 3 + TypeScript frontend, Fastify
 API, PostgreSQL (Supabase).
 
-> **Status: in development.** Two modules are live end-to-end (dashboard and
-> students); the rest are designed, with database schema and permissions in
-> place, but not yet connected. The application shows nothing it cannot back
-> with real data — modules that are not ready say so rather than displaying
-> sample records. Not yet suitable for a school's live data; see
-> [docs/PRODUCTION-PLAN.md](docs/PRODUCTION-PLAN.md) for what remains.
+> **Status: MVP feature-complete, not yet production-deployed.** All six MVP
+> modules work end-to-end: students, staff, attendance, notices, exams/marks
+> and fees, plus school setup, enrolment, promotion and bulk import. The
+> application shows nothing it cannot back with real data — modules still to
+> come say so rather than displaying sample records.
+>
+> **Before a school's live data goes in:** email delivery, automated backups
+> with a tested restore, monitoring, and UAT with real staff. Those are
+> Phases 4–6 in [docs/PRODUCTION-PLAN.md](docs/PRODUCTION-PLAN.md).
 
 ## What works today
 
@@ -17,6 +20,14 @@ API, PostgreSQL (Supabase).
 | Authentication | Argon2id passwords, hashed opaque sessions, lockout, per-IP throttling, password reset, TOTP two-factor with recovery codes |
 | Authorization | 26 permissions across 6 roles, enforced server-side, plus row-level scope (teachers see their sections, students see themselves) |
 | Students | List with search and pagination, detail, create, edit, withdraw |
+| School setup | Sessions, classes, sections, subjects, holidays; deletes refused while in use |
+| Enrolment | One enrolment per student per session; moving sections keeps their history |
+| Attendance | Daily register, holiday and date rules, 48-hour edit window with reasoned corrections, reports with CSV export |
+| Notices | Targeting by role/class/section/student, draft-then-publish, read receipts |
+| Exams & marks | Papers bounded by their maxima, a permissioned state machine, moderation, published results as an immutable snapshot |
+| Fees | Structures, concessions itemised on the bill, gapless receipts, oldest-first allocation, overpayment refused, reversal that preserves the original receipt, daybook |
+| Staff | Records, generated logins, teaching assignments, resignation that disables access same-day |
+| Onboarding | CSV import with a dry run and all-or-nothing writes; guardians; DPDP consent; year-end promotion |
 | Dashboard | Real counts, scoped to what the signed-in user may see |
 | Audit trail | Before/after JSON on every write, attributed to the acting user; logins and sensitive reads recorded |
 | Tenant isolation | Row Level Security, verified through the real application path |
@@ -28,7 +39,7 @@ API, PostgreSQL (Supabase).
 ├── src/              Vue 3 frontend
 ├── api/              Fastify API server  — see api/README.md
 ├── supabase/
-│   ├── migrations/   13 SQL migrations, the source of truth for the schema
+│   ├── migrations/   14 SQL migrations, the source of truth for the schema
 │   └── tests/        schema assertion suite
 ├── scripts/db-test.sh
 └── docs/
@@ -72,7 +83,8 @@ npm run dev
 
 ```bash
 ./scripts/db-test.sh      # schema invariants: 13 assertion groups
-cd api && npm test        # API: 65 tests across 7 files
+npm test                  # frontend: 28 tests
+cd api && npm test        # API: 180 tests across 14 files
 ```
 
 Both rebuild a throwaway database from `supabase/migrations`, so a broken

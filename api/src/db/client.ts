@@ -1,9 +1,9 @@
 import postgres from 'postgres'
 import { env } from '../env.js'
 
-export type Sql = postgres.Sql<{}>
+export type Sql = postgres.Sql<Record<string, never>>
 /** A transaction-scoped handle. Same query API as `Sql`. */
-export type Tx = postgres.TransactionSql<{}>
+export type Tx = postgres.TransactionSql<Record<string, never>>
 
 let pool: Sql | null = null
 
