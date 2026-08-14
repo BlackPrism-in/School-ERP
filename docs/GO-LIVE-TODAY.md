@@ -241,7 +241,9 @@ Do not go on until this returns ok.
 
 1. Vercel → **Add New** → **Project** → import the repo
 3. Framework is detected as Vite; [`vercel.json`](../vercel.json) supplies the
-   rest
+   rest — including the SPA rewrite that stops a refresh on `/app/students`
+   returning 404. Leave **Root Directory** as `./`: the frontend is at the repo
+   root and `api/` is ignored.
 4. Add one environment variable:
 
 ```
@@ -299,6 +301,7 @@ are working.
 | Render log shows a build command you already changed | Render stores the build command when the blueprint is first applied and does **not** re-read `render.yaml` on later pushes | Settings → Build Command, edit by hand; or delete the service and re-apply the blueprint |
 | Vercel is stuck on the wrong branch | Production branch is fixed at project creation | Deploy from `main`; or Settings → Git → Production Branch, then redeploy |
 | Refreshing a page gives 404 | SPA rewrite missing | Confirm `vercel.json` is in the deployed commit |
+| Vercel: `should NOT have additional property …` | `vercel.json` has a key outside Vercel's schema — it validates strictly and JSON has no comments | Remove the key; keep explanations in the docs |
 | `bootstrap` says the tenant exists | Already ran it | Either reuse it, or `psql "$SUPA" -c "delete from tenant where slug='schooldemo'"` and start over |
 | `seed-demo` refuses to run | The tenant already has students | Intended safety. Same delete as above to reset |
 

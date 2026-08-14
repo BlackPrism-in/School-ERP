@@ -4,7 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
 
-  "_comment_rewrites": "Vercel checks the filesystem first, so this only catches client-side routes. Without it, refreshing /app/students returns 404.",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
 
   "headers": [
